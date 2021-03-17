@@ -12,46 +12,14 @@
 
 // This test checks extended math operations.
 
+#include "esimd_test_utils.hpp"
+
 #include <CL/sycl.hpp>
 #include <CL/sycl/INTEL/esimd.hpp>
 #include <iostream>
 
 using namespace cl::sycl;
 using namespace sycl::INTEL::gpu;
-
-class ESIMDSelector : public device_selector {
-  // Require GPU device unless HOST is requested in SYCL_DEVICE_TYPE env
-  virtual int operator()(const device &device) const {
-    if (const char *dev_type = getenv("SYCL_DEVICE_TYPE")) {
-      if (!strcmp(dev_type, "GPU"))
-        return device.is_gpu() ? 1000 : -1;
-      if (!strcmp(dev_type, "HOST"))
-        return device.is_host() ? 1000 : -1;
-      std::cerr << "Supported 'SYCL_DEVICE_TYPE' env var values are 'GPU' and "
-                   "'HOST', '"
-                << dev_type << "' is not.\n";
-      return -1;
-    }
-    // If "SYCL_DEVICE_TYPE" not defined, only allow gpu device
-    return device.is_gpu() ? 1000 : -1;
-  }
-};
-
-inline auto createExceptionHandler() {
-  return [](exception_list l) {
-    for (auto ep : l) {
-      try {
-        std::rethrow_exception(ep);
-      } catch (cl::sycl::exception &e0) {
-        std::cout << "sycl::exception: " << e0.what() << std::endl;
-      } catch (std::exception &e) {
-        std::cout << "std::exception: " << e.what() << std::endl;
-      } catch (...) {
-        std::cout << "generic exception\n";
-      }
-    }
-  };
-}
 
 // --- Data initialization functions
 
@@ -75,15 +43,7 @@ struct InitDataFuncNarrow {
 
 // --- Math operation identification
 
-enum class MathOp {
-  sin,
-  cos,
-  exp,
-  sqrt,
-  inv,
-  log,
-  rsqrt
-};
+enum class MathOp { sin, cos, exp, sqrt, inv, log, rsqrt };
 
 // --- Template functions calculating given math operation on host and device
 
@@ -92,25 +52,27 @@ template <MathOp Op> float HostMathFunc(float X);
 
 // --- Specializations per each extended math operation
 
-#define DEFINE_OP(Op, HostOp)                                                      \
-template <> float HostMathFunc<MathOp::Op>(float X) { return HostOp(X); }          \
-template <int VL> struct DeviceMathFunc<VL, MathOp::Op> {                          \
-  simd<float, VL> operator()(const simd<float, VL> &X) const SYCL_ESIMD_FUNCTION { \
-    return esimd_##Op<VL>(X);                                                      \
-  }                                                                                \
-}
+#define DEFINE_OP(Op, HostOp)                                                  \
+  template <> float HostMathFunc<MathOp::Op>(float X) { return HostOp(X); }    \
+  template <int VL> struct DeviceMathFunc<VL, MathOp::Op> {                    \
+    simd<float, VL>                                                            \
+    operator()(const simd<float, VL> &X) const SYCL_ESIMD_FUNCTION {           \
+      return esimd_##Op<VL>(X);                                                \
+    }                                                                          \
+  }
 
 DEFINE_OP(sin, sin);
 DEFINE_OP(cos, cos);
 DEFINE_OP(exp, exp);
 DEFINE_OP(log, log);
-DEFINE_OP(inv, 1.0f/);
+DEFINE_OP(inv, 1.0f /);
 DEFINE_OP(sqrt, sqrt);
-DEFINE_OP(rsqrt, 1.0f/sqrt);
+DEFINE_OP(rsqrt, 1.0f / sqrt);
 
 // --- Generic kernel calculating an extended math operation on array elements
 
-template <MathOp Op, int VL, typename AccIn, typename AccOut> struct DeviceFunc {
+template <MathOp Op, int VL, typename AccIn, typename AccOut>
+struct DeviceFunc {
   AccIn In;
   AccOut Out;
 
@@ -127,8 +89,9 @@ template <MathOp Op, int VL, typename AccIn, typename AccOut> struct DeviceFunc 
 
 // --- Generic test function for an extended math operation
 
-template <MathOp Op, int VL, typename InitF = InitDataFuncNarrow> bool test(
-  queue &Q, const std::string &Name, InitF InitData = InitDataFuncNarrow{}) {
+template <MathOp Op, int VL, typename InitF = InitDataFuncNarrow>
+bool test(queue &Q, const std::string &Name,
+          InitF InitData = InitDataFuncNarrow{}) {
 
   constexpr size_t Size = 1024 * 128;
 
@@ -154,9 +117,9 @@ template <MathOp Op, int VL, typename InitF = InitDataFuncNarrow> bool test(
       CGH.parallel_for(nd_range<1>{GlobalRange, LocalRange}, Kernel);
     });
     E.wait();
-  }
-  catch (sycl::exception &Exc) {
-    std::cout << "    *** ERROR. SYCL exception caught: << " << Exc.what() << "\n";
+  } catch (sycl::exception &Exc) {
+    std::cout << "    *** ERROR. SYCL exception caught: << " << Exc.what()
+              << "\n";
     return false;
   }
 
@@ -169,8 +132,8 @@ template <MathOp Op, int VL, typename InitF = InitDataFuncNarrow> bool test(
 
     if (abs(Test - Gold) > 0.0001) {
       if (++ErrCnt < 10) {
-        std::cout << "    failed at index " << I << ", " << Test << " != " << Gold
-                  << " (gold)\n";
+        std::cout << "    failed at index " << I << ", " << Test
+                  << " != " << Gold << " (gold)\n";
       }
     }
   }
@@ -196,7 +159,7 @@ template <int VL> bool test(queue &Q) {
   Pass &= test<MathOp::inv, VL>(Q, "inv");
   Pass &= test<MathOp::rsqrt, VL>(Q, "rsqrt");
 // TODO enable these tests after the implementation is fixed
-#if DISABLE_SIN_COS_EXP_LOG
+#if ENABLE_SIN_COS_EXP_LOG
   Pass &= test<MathOp::sin, VL>(Q, "sin", InitDataFuncWide{});
   Pass &= test<MathOp::cos, VL>(Q, "cos", InitDataFuncWide{});
   Pass &= test<MathOp::exp, VL>(Q, "exp");
@@ -208,7 +171,7 @@ template <int VL> bool test(queue &Q) {
 // --- The entry point
 
 int main(void) {
-  queue Q(ESIMDSelector{}, createExceptionHandler());
+  queue Q(esimd_test::ESIMDSelector{}, esimd_test::createExceptionHandler());
   auto Dev = Q.get_device();
   std::cout << "Running on " << Dev.get_info<info::device::name>() << "\n";
   bool Pass = true;
