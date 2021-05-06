@@ -86,7 +86,7 @@ template <typename T, int N, bool IsAcc> bool test(queue q, size_t size) {
   }
 
   for (unsigned i = 0; i < size; ++i) {
-    A[i] = 0;
+    A[i] = i; // should not be zero to test `copy_from` really works
   }
 
   try {
@@ -117,7 +117,7 @@ template <typename T, int N, bool IsAcc> bool test(queue q, size_t size) {
   int err_cnt = 0;
 
   for (unsigned i = 0; i < size; ++i) {
-    T gold = (T)i;
+    T gold = (T)(i * 2);
     T val = A[i];
 
     if (val != gold) {
