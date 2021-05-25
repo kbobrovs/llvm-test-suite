@@ -13,7 +13,7 @@
 // The test checks functionality of the memory access APIs which are members of
 // the simd class.
 
-#include "esimd_test_utils.hpp"
+#include "../esimd_test_utils.hpp"
 
 #include <CL/sycl.hpp>
 #include <CL/sycl/INTEL/esimd.hpp>
