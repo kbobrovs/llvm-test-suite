@@ -16,10 +16,11 @@
 #include "../esimd_test_utils.hpp"
 
 #include <CL/sycl.hpp>
-#include <CL/sycl/INTEL/esimd.hpp>
+#include <sycl/ext/intel/experimental/esimd.hpp>
 #include <iostream>
 
 using namespace cl::sycl;
+using namespace sycl::ext::intel::experimental::esimd;
 
 template <typename T>
 using Acc =
@@ -33,7 +34,6 @@ template <typename T, int N> struct Kernel<T, N, true> {
   Kernel(Acc<T> acc) : acc(acc) {}
 
   void operator()(id<1> i) const SYCL_ESIMD_KERNEL {
-    using namespace sycl::INTEL::gpu;
     const uint32_t ii = static_cast<uint32_t>(i.get(0));
     simd<T, N> v;
     const auto offset = ii * sizeof(v);
@@ -49,7 +49,6 @@ template <typename T, int N> struct Kernel<T, N, false> {
   Kernel(T *ptr) : ptr(ptr) {}
 
   void operator()(id<1> i) const SYCL_ESIMD_KERNEL {
-    using namespace sycl::INTEL::gpu;
     const uint32_t ii = static_cast<uint32_t>(i.get(0));
     simd<T, N> v;
     const auto offset = ii * (sizeof(v) / sizeof(T));
