@@ -17,6 +17,7 @@
 
 #include <CL/sycl.hpp>
 #include <sycl/ext/intel/experimental/esimd.hpp>
+
 #include <iostream>
 
 using namespace cl::sycl;
