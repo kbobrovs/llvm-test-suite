@@ -49,9 +49,9 @@ template <typename T, int N, int Op> bool test(queue q) {
   constexpr size_t num_vals = sizeof(vals) / sizeof(vals[0]);
 
   constexpr size_t size = N * num_vals;
-  unsigned int *A = sycl::malloc_shared<unsigned int>(size, q);
+  unsigned int *A = sycl::malloc_shared<unsigned int>(num_vals, q);
 
-  for (unsigned int i = 0; i < size; ++i) {
+  for (unsigned int i = 0; i < num_vals; ++i) {
     A[i] = 0xFFFFffff;
   }
 
