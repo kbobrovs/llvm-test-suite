@@ -16,11 +16,11 @@
 
 #include <CL/sycl.hpp>
 #include <sycl/ext/intel/experimental/esimd.hpp>
+
 #include <iostream>
 
 using namespace cl::sycl;
 using namespace sycl::ext::intel::experimental::esimd;
-
 
 struct bit_op {
   enum { cbit, fbl, fbh, num_ops };
@@ -41,11 +41,11 @@ template <typename T, int N, int Op> bool test(queue q) {
   std::cout << "Testing op=" << ops[Op] << " T=" << typeid(T).name()
             << ", N=" << N << "...\n";
 
-  T val_all_zero{ 0 };
-  T val_all_one{ static_cast<T>(~val_all_zero) };
-  T val_two_one{ static_cast<T>(T{1} << (sizeof(T) * 8 - 2) | 2) }; // 010...010
+  T val_all_zero{0};
+  T val_all_one{static_cast<T>(~val_all_zero)};
+  T val_two_one{static_cast<T>(T{1} << (sizeof(T) * 8 - 2) | 2)}; // 010...010
 
-  T vals[] = { val_all_zero, val_all_one, val_two_one };
+  T vals[] = {val_all_zero, val_all_one, val_two_one};
   constexpr size_t num_vals = sizeof(vals) / sizeof(vals[0]);
 
   constexpr size_t size = N * num_vals;
@@ -83,18 +83,18 @@ template <typename T, int N, int Op> bool test(queue q) {
   }
 
   unsigned int Gold[size] = {
-    // cbit:
-    0,             // all zero
-    sizeof(T) * 8, // all one
-    2,             // two one
-    // fbl:
-    0xFFFFffff,    // all zero
-    0,             // all one
-    1,             // two one
-    // fbh:
-    0xFFFFffff,    // all zero
-    std::is_signed<T>::value ? 0xFFFFffff : 0,    // all one
-    1              // two one
+      // cbit:
+      0,             // all zero
+      sizeof(T) * 8, // all one
+      2,             // two one
+      // fbl:
+      0xFFFFffff, // all zero
+      0,          // all one
+      1,          // two one
+      // fbh:
+      0xFFFFffff,                                // all zero
+      std::is_signed<T>::value ? 0xFFFFffff : 0, // all one
+      1                                          // two one
   };
   int err_cnt = 0;
 
